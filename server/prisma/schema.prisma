@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  login String @db.VarChar(255) @unique
+  nickname String @db.VarChar(255)
+  password String @db.VarChar(255)
+  status String? @db.VarChar(100)
+  user_category_id Int @db.Integer
+  avatar_url String? @db.Text 
+
+  user_categories User_Categories @relation(fields: [user_category_id], references: [id])
+  servers User_servers[]
+  conversation Conversation[]
+  sent_messages Message[] @relation("SentMessages")
+  sent_friend Friendship[] @relation("SentFriends")
+  received_fried Friendship[] @relation("ReceivedFriends")
+}
+
+model User_Categories {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(255)
+
+  users User[]
+}
+
+model Server {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(255)
+  server_avatar_url String? @db.Text
+
+  user_servers User_servers[]
+  channels Channel[]
+}
+
+model User_server_roles {
+  id Int @id @default(autoincrement())
+  name String @db.VarChar(255)
+  
+  user_servers User_servers[]
+}
+
+model User_servers {
+  id Int @id @default(autoincrement())
+  user_Id Int @db.Integer
+  server_Id Int @db.Integer
+  user_server_role Int
+
+  user User @relation(fields: [user_Id], references: [id])
+  server Server @relation(fields: [server_Id], references: [id])
+  user_server_roles User_server_roles @relation(fields: [user_server_role], references: [id])
+}
+
+model Channel {
+  id Int @id @default(autoincrement())
+  server_id Int @db.Integer
+  channel_name String @db.VarChar(255)
+  
+  server Server @relation(fields: [server_id], references: [id])
+  message Message[]
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+  text String @db.VarChar(255)
+  timestamp DateTime @db.Timestamp()
+  sender_id Int @db.Integer
+  channel_id Int? @db.Integer
+  conversation_id Int? @db.Integer
+
+  conversation Conversation? @relation(fields: [conversation_id], references: [id])
+  sender User @relation("SentMessages", fields: [sender_id], references: [id])
+  channel Channel? @relation(fields: [channel_id], references: [id])
+}
+
+model Conversation {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  users User[]
+  messages Message[]
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+model Friendship {
+  id Int @id @default(autoincrement())
+  sender_id Int @db.Integer
+  sender User @relation("SentFriends", fields: [sender_id], references: [id])
+  receiver_id Int @db.Integer
+  receiver User @relation("ReceivedFriends", fields: [receiver_id], references: [id])
+  status FriendshipStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sender_id, receiver_id])
+}
