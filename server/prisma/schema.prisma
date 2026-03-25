@@ -88,6 +88,7 @@ model Message {
 model Conversation {
   id Int @id @default(autoincrement())
   createdAt DateTime @default(now())
+  pair_key String? @unique @db.VarChar(64)
 
   users User[]
   messages Message[]

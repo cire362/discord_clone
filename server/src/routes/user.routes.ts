@@ -4,6 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import {
   userEditSchema,
   userLoginSchema,
+  userMessageSchema,
   userRegisterSchema,
 } from "../validators/user.validator.js";
 import {
@@ -25,6 +26,14 @@ import {
 import { HTTPException } from "hono/http-exception";
 import { jwt } from "hono/jwt";
 import { checkUserAdmin } from "../utils/checkAdmin.js";
+import {
+  acceptFriendRequest,
+  getAllFriendships,
+  getConversations,
+  getMessages,
+  sendFriendRequest,
+  sendMessage,
+} from "../services/friend.service.js";
 
 type ContextWithPrisma = {
   Variables: {
@@ -187,5 +196,89 @@ userRouter.delete("/users/:id", async (c) => {
   const deleted = await deleteUserById(prisma, id);
   return c.json({ message: "Пользователь удален", deleted }, 200);
 });
+
+userRouter.post("/users/friends/:id", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const id = parseInt(c.req.param("id"));
+  const friendRequest = await sendFriendRequest(prisma, payload.id, id);
+  return c.json({ message: "Заявка отправлена", friendRequest }, 201);
+});
+
+userRouter.put("/users/friends/accept/:requestId", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const id = parseInt(c.req.param("requestId"));
+  const acceptRequest = await acceptFriendRequest(prisma, id, payload.id);
+  return c.json({ message: "Заявка принята", acceptRequest }, 200);
+});
+
+userRouter.get("/users/friends", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const friends = await getAllFriendships(prisma, payload.id);
+  return c.json({ message: "Друзья получены", friends }, 200);
+});
+
+userRouter.get("/users/conversations", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const conversations = await getConversations(prisma, payload.id);
+  return c.json({ message: "Диалоги получены", conversations }, 200);
+});
+
+userRouter.get("/users/conversations/:conversationId/messages", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const conversationId = parseInt(c.req.param("conversationId"));
+  const messages = await getMessages(prisma, conversationId, payload.id);
+  return c.json({ messages: "Сообщения получены", received: messages }, 200);
+});
+
+userRouter.post(
+  "/users/dm/:userId/messages",
+  zValidator("json", userMessageSchema),
+  async (c) => {
+    const prisma = c.get("prisma");
+    const receiverId = parseInt(c.req.param("userId"));
+    const text = c.req.valid("json");
+    const payload = c.get("jwtPayload");
+    const newMessage = await sendMessage(
+      prisma,
+      payload.id,
+      receiverId,
+      text.text,
+    );
+
+    return c.json({ message: "Сообщение отправлено", newMessage }, 201);
+  },
+);
+
+userRouter.get("/users/conversations/:id", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const id = parseInt(c.req.param("id"));
+  const messages = await getMessages(prisma, id, payload.id);
+  return c.json({ messages: "Сообщения получены", received: messages }, 200);
+});
+
+userRouter.post(
+  "/users/conversations/:id",
+  zValidator("json", userMessageSchema),
+  async (c) => {
+    const prisma = c.get("prisma");
+    const receiverId = parseInt(c.req.param("id"));
+    const text = c.req.valid("json");
+    const payload = c.get("jwtPayload");
+    const newMessage = await sendMessage(
+      prisma,
+      payload.id,
+      receiverId,
+      text.text,
+    );
+
+    return c.json({ message: "Сообщение отправлено", newMessage }, 201);
+  },
+);
 
 export default userRouter;

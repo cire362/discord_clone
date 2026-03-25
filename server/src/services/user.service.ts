@@ -129,6 +129,57 @@ export async function getUsers(prisma: PrismaClient) {
   }
 }
 
+export async function searchUsers(
+  prisma: PrismaClient,
+  query: string,
+  currentUserId: number,
+) {
+  try {
+    const trimmed = query.trim();
+
+    if (trimmed.length < 2) {
+      throw new HTTPException(400, { message: "Введите минимум 2 символа" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          not: currentUserId,
+        },
+        OR: [
+          {
+            login: {
+              contains: trimmed,
+              mode: "insensitive",
+            },
+          },
+          {
+            nickname: {
+              contains: trimmed,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        login: true,
+        nickname: true,
+        status: true,
+        avatar_url: true,
+      },
+      take: 20,
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    return users;
+  } catch (e) {
+    checkError(e, {});
+  }
+}
+
 export async function getUserById(prisma: PrismaClient, id: number) {
   try {
     const user = await prisma.user.findFirst({

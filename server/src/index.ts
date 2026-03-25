@@ -4,6 +4,7 @@ import type { PrismaClient } from "./generated/prisma/client.js";
 import withPrisma from "./lib/prisma.js";
 import userRouter from "./routes/user.routes.js";
 import { HTTPException } from "hono/http-exception";
+import { cors } from "hono/cors";
 
 type ContextWithPrisma = {
   Variables: {
@@ -12,7 +13,7 @@ type ContextWithPrisma = {
 };
 
 const app = new Hono<ContextWithPrisma>();
-app.use("*", withPrisma);
+app.use("*", withPrisma).use(cors());
 app.onError((err: any, c: Context) => {
   if (err instanceof HTTPException) {
     return c.json({ err: err.message }, err.status);
