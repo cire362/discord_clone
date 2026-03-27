@@ -5,3 +5,8 @@ export async function getConversations() {
 
   return res;
 }
+
+export async function getConversationMessages(conversationId: number) {
+  const res = await authFetch(`users/conversations/${conversationId}/messages`);
+  return res;
+}

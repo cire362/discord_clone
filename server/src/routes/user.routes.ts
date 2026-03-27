@@ -34,6 +34,7 @@ import {
   getMessages,
   sendFriendRequest,
   sendMessage,
+  getDMMessages,
 } from "../services/friend.service.js";
 
 type ContextWithPrisma = {
@@ -260,6 +261,17 @@ userRouter.put(
 
     const updated = await updateProfile(prisma, id, data);
     return c.json({ message: "Пользователь обновлен", updated }, 200);
+  },
+);
+
+userRouter.get(
+  "/users/dm/:userId/messages",
+  async (c) => {
+    const prisma = c.get("prisma");
+    const receiverId = parseInt(c.req.param("userId"));
+    const payload = c.get("jwtPayload");
+    const messages = await getDMMessages(prisma, payload.id, receiverId);
+    return c.json({ messages: "Сообщения получены", received: messages }, 200);
   },
 );
 

@@ -12,7 +12,7 @@ import PendingFriends from "./FriendsScreen/PendingFriends";
 import AddFriend from "./FriendsScreen/AddFriend";
 
 interface FriendsScreenProps {
-  setActiveChat: (chatId: string) => void;
+  setActiveChat: (chat: any) => void;
 }
 
 function FriendsScreen({ setActiveChat }: FriendsScreenProps) {

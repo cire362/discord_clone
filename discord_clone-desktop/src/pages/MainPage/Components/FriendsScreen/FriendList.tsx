@@ -6,7 +6,7 @@ import { SectionTitle } from "../../../../components/ui/SectionTitle";
 interface FriendListProps {
   allFriends: any;
   isFriendsLoading: Boolean;
-  setActiveChat: (chatId: string) => void;
+  setActiveChat: (chatId: any) => void;
 }
 
 function FriendList({
@@ -28,7 +28,9 @@ function FriendList({
               key={friend.id}
               nickname={user.nickname}
               subtitle={`@${user.login}`}
-              onClick={() => setActiveChat(user.nickname)}
+              onClick={() =>
+                setActiveChat({ id: user.id, nickname: user.nickname })
+              }
               rightAction={
                 <div className="text-gray-400 group-hover:text-gray-200 p-2 rounded-full hover:bg-gray-900 transition flex items-center justify-center">
                   <MessageIcon />

@@ -259,3 +259,38 @@ export async function getConversations(prisma: PrismaClient, user_id: number) {
     checkError(e, {});
   }
 }
+
+export async function getDMMessages(
+  prisma: PrismaClient,
+  sender_id: number,
+  receiver_id: number,
+) {
+  try {
+    const pairKey = createDmPairKey(sender_id, receiver_id);
+    const conversation = await prisma.conversation.findUnique({
+      where: {
+        pair_key: pairKey,
+      },
+      select: {
+        id: true,
+      }
+    });
+
+    if (!conversation) {
+      return [];
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        conversation_id: conversation.id,
+      },
+      orderBy: {
+        timestamp: "asc",
+      },
+    });
+
+    return messages;
+  } catch (e) {
+    checkError(e, {});
+  }
+}

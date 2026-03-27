@@ -7,7 +7,7 @@ import FriendsScreen from "./Components/FriendsScreen";
 import ChatScreen from "./Components/ChatScreen";
 
 function MainPage() {
-  const [activeChat, setActiveChat] = useState<string>("friends");
+  const [activeChat, setActiveChat] = useState<any>("friends");
 
   const { data: conversations, isLoading } = useQuery({
     queryFn: () => getConversations(),

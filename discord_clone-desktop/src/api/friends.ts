@@ -23,3 +23,19 @@ export async function acceptFriendRequest(requestId: number) {
   });
   return res;
 }
+
+export async function sendMessage(message: string, userId: number) {
+  const res = await authFetch(`users/dm/${userId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      receiverId: userId,
+      text: message,
+    }),
+  });
+  return res;
+}
+
+export async function getDirectMessages(userId: number) {
+  const res = await authFetch(`users/dm/${userId}/messages`);
+  return res;
+}
