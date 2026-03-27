@@ -13,6 +13,7 @@ import {
   getUsers,
   loginUser,
   registerUser,
+  searchUsers,
   updateProfile,
 } from "../services/user.service.js";
 import { user_categoriesCreateSchema } from "../validators/user_categories.validator.js";
@@ -179,6 +180,14 @@ userRouter.get("/users", async (c) => {
   return c.json({ message: "Пользователи получены", users }, 200);
 });
 
+userRouter.get("/users/search", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const query = c.req.query("q") || "";
+  const users = await searchUsers(prisma, query, payload.id);
+  return c.json({ message: "Пользователи найдены", users }, 200);
+});
+
 userRouter.get("/users/:id", async (c) => {
   const prisma = c.get("prisma");
   const id = parseInt(c.req.param("id"));
@@ -241,33 +250,6 @@ userRouter.post(
   async (c) => {
     const prisma = c.get("prisma");
     const receiverId = parseInt(c.req.param("userId"));
-    const text = c.req.valid("json");
-    const payload = c.get("jwtPayload");
-    const newMessage = await sendMessage(
-      prisma,
-      payload.id,
-      receiverId,
-      text.text,
-    );
-
-    return c.json({ message: "Сообщение отправлено", newMessage }, 201);
-  },
-);
-
-userRouter.get("/users/conversations/:id", async (c) => {
-  const prisma = c.get("prisma");
-  const payload = c.get("jwtPayload");
-  const id = parseInt(c.req.param("id"));
-  const messages = await getMessages(prisma, id, payload.id);
-  return c.json({ messages: "Сообщения получены", received: messages }, 200);
-});
-
-userRouter.post(
-  "/users/conversations/:id",
-  zValidator("json", userMessageSchema),
-  async (c) => {
-    const prisma = c.get("prisma");
-    const receiverId = parseInt(c.req.param("id"));
     const text = c.req.valid("json");
     const payload = c.get("jwtPayload");
     const newMessage = await sendMessage(

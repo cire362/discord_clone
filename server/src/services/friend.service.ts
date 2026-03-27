@@ -108,7 +108,7 @@ export async function getAllFriendships(prisma: PrismaClient, user_id: number) {
     });
 
     if (friendship.length == 0) {
-      throw new HTTPException(404, { message: "Друзья не нейдены" });
+      throw new HTTPException(404, { message: "Друзья не найдены" });
     }
 
     const friends = friendship.map((f) => {
