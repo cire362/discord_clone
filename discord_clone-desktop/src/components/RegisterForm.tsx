@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+
 interface RegisterFormProps {
   setError: (msg: string) => void;
   registerData: { login: string; password: string; nickname: string };
@@ -17,19 +19,25 @@ function RegisterForm({
   error,
   setIsRegester,
 }: RegisterFormProps) {
+  const registerMutation = useMutation({
+    mutationFn: (data: any) => registerUser(data),
+    onSuccess: (res) => {
+      if (res.err) {
+        setError(res.err);
+        return;
+      }
+      setRegisterData({ login: "", password: "", nickname: "" });
+      setIsRegester(false);
+    },
+  });
+
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={async (e) => {
         e.preventDefault();
         setError("");
-        const res = await registerUser(registerData);
-        if (res.err) {
-          setError(res.err);
-          return;
-        }
-        console.log(res);
-        setRegisterData({ login: "", password: "", nickname: "" });
+        registerMutation.mutate(registerData);
       }}
     >
       <label className="flex flex-col">
@@ -83,8 +91,9 @@ function RegisterForm({
         <button
           className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded transition duration-200 shadow-lg shadow-indigo-500/30"
           type="submit"
+          disabled={registerMutation.isPending}
         >
-          Зарегистрироваться
+          {registerMutation.isPending ? "Загрузка" : "Регистрация"}
         </button>
         <button
           className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline transition"

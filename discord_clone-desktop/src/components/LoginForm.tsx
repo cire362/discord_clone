@@ -1,3 +1,6 @@
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+
 interface LoginFormProps {
   setError: (msg: string) => void;
   loginData: { login: string; password: string };
@@ -17,22 +20,29 @@ function LoginForm({
   error,
   setIsRegester,
 }: LoginFormProps) {
+  const navigate = useNavigate();
+
+  const loginMutation = useMutation({
+    mutationFn: (data: any) => loginUser(data),
+    onSuccess: (res) => {
+      if (res.err) {
+        setError(res.err);
+        return;
+      }
+
+      localStorage.setItem("token", res.token);
+
+      navigate("/");
+    },
+  });
+
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={async (e) => {
         e.preventDefault();
         setError("");
-        const res = await loginUser(loginData);
-        if (res.err) {
-          setError(res.err);
-          return;
-        }
-        if (res && res.token) {
-          localStorage.setItem("token", res.token);
-        }
-        console.log(res);
-        setLoginData({ login: "", password: "" });
+        loginMutation.mutate(loginData);
       }}
     >
       <label className="flex flex-col">
@@ -72,8 +82,9 @@ function LoginForm({
         <button
           className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded transition duration-200 shadow-lg shadow-indigo-500/30"
           type="submit"
+          disabled={loginMutation.isPending}
         >
-          Вход
+          {loginMutation.isPending ? "Загрузка" : "Вход"}
         </button>
         <button
           className="text-sm self-start text-indigo-400 hover:text-indigo-300 hover:underline transition"
