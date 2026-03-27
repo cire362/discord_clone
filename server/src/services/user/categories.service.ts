@@ -1,10 +1,10 @@
 import { HTTPException } from "hono/http-exception";
-import { PrismaClient } from "../generated/prisma/client.js";
+import { PrismaClient } from "../../generated/prisma/client.js";
 import type {
   User_CategoriesCreateInput,
   User_CategoriesUpdateInput,
-} from "../generated/prisma/models.js";
-import { checkError } from "../utils/checkError.js";
+} from "../../generated/prisma/models.js";
+import { checkError } from "../../utils/checkError.js";
 
 export async function createUserCategory(
   prisma: PrismaClient,
@@ -48,10 +48,6 @@ export async function updateUserCategory(
 export async function getUserCategories(prisma: PrismaClient) {
   try {
     const categories = await prisma.user_Categories.findMany();
-
-    if (categories.length == 0) {
-      throw new HTTPException(404, { message: "Категории не найдены" });
-    }
 
     return categories;
   } catch (e) {

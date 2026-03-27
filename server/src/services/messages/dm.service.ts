@@ -1,119 +1,8 @@
 import { HTTPException } from "hono/http-exception";
-import { PrismaClient } from "../generated/prisma/client.js";
-import { checkError } from "../utils/checkError.js";
-
-const safeUserSelect = {
-  id: true,
-  login: true,
-  nickname: true,
-  status: true,
-  avatar_url: true,
-};
-
-function createDmPairKey(firstUserId: number, secondUserId: number) {
-  const left = Math.min(firstUserId, secondUserId);
-  const right = Math.max(firstUserId, secondUserId);
-
-  return `${left}:${right}`;
-}
-
-export async function sendFriendRequest(
-  prisma: PrismaClient,
-  sender_id: number,
-  receiver_id: number,
-) {
-  try {
-    if (sender_id == receiver_id) {
-      throw new HTTPException(409, {
-        message: "Заявка не может быть отправлена самому себе",
-      });
-    }
-
-    const alreadyExists = await prisma.friendship.findFirst({
-      where: {
-        OR: [
-          { sender_id: sender_id, receiver_id: receiver_id },
-          { receiver_id: sender_id, sender_id: receiver_id },
-        ],
-      },
-    });
-
-    if (alreadyExists) {
-      throw new HTTPException(409, { message: "Заявка уже отправлена" });
-    }
-
-    const friendship = await prisma.friendship.create({
-      data: {
-        sender_id: sender_id,
-        receiver_id: receiver_id,
-      },
-    });
-
-    return friendship;
-  } catch (e) {
-    checkError(e, {
-      P2002: { status: 409, message: "Заявка в друзья уже существует" },
-    });
-  }
-}
-
-export async function acceptFriendRequest(
-  prisma: PrismaClient,
-  friendRequestId: number,
-  receiver_id: number,
-) {
-  try {
-    const request = await prisma.friendship.findFirst({
-      where: {
-        id: friendRequestId,
-        status: "PENDING",
-        receiver_id: receiver_id,
-      },
-    });
-
-    if (!request) {
-      throw new HTTPException(404, { message: "Заявка не найдена" });
-    }
-
-    const updated = await prisma.friendship.update({
-      where: {
-        id: friendRequestId,
-      },
-      data: {
-        status: "ACCEPTED",
-      },
-    });
-
-    return updated;
-  } catch (e) {
-    checkError(e, {});
-  }
-}
-
-export async function getAllFriendships(prisma: PrismaClient, user_id: number) {
-  try {
-    const friendships = await prisma.friendship.findMany({
-      where: {
-        OR: [{ receiver_id: user_id }, { sender_id: user_id }],
-      },
-      include: {
-        sender: {
-          select: safeUserSelect,
-        },
-        receiver: {
-          select: safeUserSelect,
-        },
-      },
-    });
-
-    const incoming = friendships.filter((f) => f.receiver_id === user_id);
-    const outgoing = friendships.filter((f) => f.sender_id === user_id);
-
-    return { incoming, outgoing };
-  } catch (e) {
-    checkError(e, {});
-  }
-}
+import { PrismaClient } from "../../generated/prisma/client.js";
+import { checkError } from "../../utils/checkError.js";
+import { safeUserSelect } from "../shared/user.select.js";
+import { createDmPairKey } from "../shared/dm.helpers.js";
 
 export async function sendMessage(
   prisma: PrismaClient,
@@ -145,7 +34,7 @@ export async function sendMessage(
       where: {
         status: "ACCEPTED",
         OR: [
-          { sender_id: sender_id, receiver_id: receiver_id },
+          { sender_id, receiver_id },
           { sender_id: receiver_id, receiver_id: sender_id },
         ],
       },
@@ -181,8 +70,8 @@ export async function sendMessage(
 
     const newMessage = await prisma.message.create({
       data: {
-        text: text,
-        sender_id: sender_id,
+        text,
+        sender_id,
         conversation_id: conversation.id,
         timestamp: new Date(),
       },
@@ -250,10 +139,6 @@ export async function getConversations(prisma: PrismaClient, user_id: number) {
       },
     });
 
-    if (conversations.length == 0) {
-      throw new HTTPException(404, { message: "Диалоги не найдены" });
-    }
-
     return conversations;
   } catch (e) {
     checkError(e, {});
@@ -273,7 +158,7 @@ export async function getDMMessages(
       },
       select: {
         id: true,
-      }
+      },
     });
 
     if (!conversation) {

@@ -1,16 +1,10 @@
 import { serve } from "@hono/node-server";
 import { Hono, type Context } from "hono";
-import type { PrismaClient } from "./generated/prisma/client.js";
 import withPrisma from "./lib/prisma.js";
-import userRouter from "./routes/user.routes.js";
+import apiRouter from "./routes/index.js";
 import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
-
-type ContextWithPrisma = {
-  Variables: {
-    prisma: PrismaClient;
-  };
-};
+import type { ContextWithPrisma } from "./types/index.js";
 
 const app = new Hono<ContextWithPrisma>();
 app.use("*", withPrisma).use(cors());
@@ -25,7 +19,7 @@ app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
 
-app.route("/", userRouter);
+app.route("/", apiRouter);
 
 serve(
   {
