@@ -1,11 +1,11 @@
 import { useState, useCallback } from "react";
-import { loginUser } from "../api/loginUser";
-import { registerUser } from "../api/registerUser";
+import { loginUser } from "../../api/loginUser";
+import { registerUser } from "../../api/registerUser";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 import type { Engine } from "tsparticles-engine";
-import LoginForm from "../components/LoginForm";
-import RegisterForm from "../components/RegisterForm";
+import LoginForm from "./Components/LoginForm";
+import RegisterForm from "./Components/RegisterForm";
 
 function Login() {
   const [isRegister, setIsRegester] = useState(true);

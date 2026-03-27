@@ -80,7 +80,7 @@ if (!secret) {
   throw new HTTPException(500, { message: "Ошибка сервера" });
 }
 
-userRouter.use("/users", jwt({ secret: secret, alg: "HS256" }));
+userRouter.use("/users/*", jwt({ secret: secret, alg: "HS256" }));
 
 userRouter.post(
   "/users/register/admin",
@@ -101,24 +101,6 @@ userRouter.post(
   },
 );
 
-userRouter.put(
-  "/users/edit/:id",
-  zValidator("json", userEditSchema),
-  async (c) => {
-    const prisma = c.get("prisma");
-    const data = c.req.valid("json");
-    const id = parseInt(c.req.param("id"));
-    const payload = c.get("jwtPayload");
-
-    if (payload.id !== id) {
-      throw new HTTPException(403, { message: "Доступ запрещен" });
-    }
-
-    const updated = await updateProfile(prisma, id, data);
-    return c.json({ message: "Пользователь обновлен", updated }, 200);
-  },
-);
-
 userRouter.post(
   "/users/categories",
   zValidator("json", user_categoriesCreateSchema),
@@ -131,38 +113,6 @@ userRouter.post(
     return c.json({ message: "Категория создана", new_category }, 201);
   },
 );
-
-userRouter.put(
-  "/users/categories/:id",
-  zValidator("json", user_categoriesCreateSchema),
-  async (c) => {
-    const prisma = c.get("prisma");
-    const payload = c.get("jwtPayload");
-    const id = parseInt(c.req.param("id"));
-    checkUserAdmin(payload.user_category, [2]);
-    const data = c.req.valid("json");
-    const updated = await updateUserCategory(prisma, data, id);
-    return c.json({ message: "Категория обновлена", updated }, 200);
-  },
-);
-
-userRouter.get("/users/categories/:id", async (c) => {
-  const prisma = c.get("prisma");
-  const payload = c.get("jwtPayload");
-  const id = parseInt(c.req.param("id"));
-  checkUserAdmin(payload.user_category, [2]);
-  const category = await getUserCategoryById(prisma, id);
-  return c.json({ message: "Категория получена", category }, 200);
-});
-
-userRouter.delete("/users/categories/:id", async (c) => {
-  const prisma = c.get("prisma");
-  const payload = c.get("jwtPayload");
-  const id = parseInt(c.req.param("id"));
-  checkUserAdmin(payload.user_category, [2]);
-  const deleted = await deleteUserCategoryById(prisma, id);
-  return c.json({ message: "Категория удалена", deleted }, 200);
-});
 
 userRouter.get("/users/categories", async (c) => {
   const prisma = c.get("prisma");
@@ -186,6 +136,20 @@ userRouter.get("/users/search", async (c) => {
   const query = c.req.query("q") || "";
   const users = await searchUsers(prisma, query, payload.id);
   return c.json({ message: "Пользователи найдены", users }, 200);
+});
+
+userRouter.get("/users/friends", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const friends = await getAllFriendships(prisma, payload.id);
+  return c.json({ message: "Друзья получены", friends }, 200);
+});
+
+userRouter.get("/users/conversations", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const conversations = await getConversations(prisma, payload.id);
+  return c.json({ message: "Диалоги получены", conversations }, 200);
 });
 
 userRouter.get("/users/:id", async (c) => {
@@ -222,20 +186,6 @@ userRouter.put("/users/friends/accept/:requestId", async (c) => {
   return c.json({ message: "Заявка принята", acceptRequest }, 200);
 });
 
-userRouter.get("/users/friends", async (c) => {
-  const prisma = c.get("prisma");
-  const payload = c.get("jwtPayload");
-  const friends = await getAllFriendships(prisma, payload.id);
-  return c.json({ message: "Друзья получены", friends }, 200);
-});
-
-userRouter.get("/users/conversations", async (c) => {
-  const prisma = c.get("prisma");
-  const payload = c.get("jwtPayload");
-  const conversations = await getConversations(prisma, payload.id);
-  return c.json({ message: "Диалоги получены", conversations }, 200);
-});
-
 userRouter.get("/users/conversations/:conversationId/messages", async (c) => {
   const prisma = c.get("prisma");
   const payload = c.get("jwtPayload");
@@ -260,6 +210,56 @@ userRouter.post(
     );
 
     return c.json({ message: "Сообщение отправлено", newMessage }, 201);
+  },
+);
+
+userRouter.put(
+  "/users/categories/:id",
+  zValidator("json", user_categoriesCreateSchema),
+  async (c) => {
+    const prisma = c.get("prisma");
+    const payload = c.get("jwtPayload");
+    const id = parseInt(c.req.param("id"));
+    checkUserAdmin(payload.user_category, [2]);
+    const data = c.req.valid("json");
+    const updated = await updateUserCategory(prisma, data, id);
+    return c.json({ message: "Категория обновлена", updated }, 200);
+  },
+);
+
+userRouter.get("/users/categories/:id", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const id = parseInt(c.req.param("id"));
+  checkUserAdmin(payload.user_category, [2]);
+  const category = await getUserCategoryById(prisma, id);
+  return c.json({ message: "Категория получена", category }, 200);
+});
+
+userRouter.delete("/users/categories/:id", async (c) => {
+  const prisma = c.get("prisma");
+  const payload = c.get("jwtPayload");
+  const id = parseInt(c.req.param("id"));
+  checkUserAdmin(payload.user_category, [2]);
+  const deleted = await deleteUserCategoryById(prisma, id);
+  return c.json({ message: "Категория удалена", deleted }, 200);
+});
+
+userRouter.put(
+  "/users/edit/:id",
+  zValidator("json", userEditSchema),
+  async (c) => {
+    const prisma = c.get("prisma");
+    const data = c.req.valid("json");
+    const id = parseInt(c.req.param("id"));
+    const payload = c.get("jwtPayload");
+
+    if (payload.id !== id) {
+      throw new HTTPException(403, { message: "Доступ запрещен" });
+    }
+
+    const updated = await updateProfile(prisma, id, data);
+    return c.json({ message: "Пользователь обновлен", updated }, 200);
   },
 );
 

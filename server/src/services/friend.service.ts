@@ -92,9 +92,8 @@ export async function acceptFriendRequest(
 
 export async function getAllFriendships(prisma: PrismaClient, user_id: number) {
   try {
-    const friendship = await prisma.friendship.findMany({
+    const friendships = await prisma.friendship.findMany({
       where: {
-        status: "ACCEPTED",
         OR: [{ receiver_id: user_id }, { sender_id: user_id }],
       },
       include: {
@@ -107,15 +106,10 @@ export async function getAllFriendships(prisma: PrismaClient, user_id: number) {
       },
     });
 
-    if (friendship.length == 0) {
-      throw new HTTPException(404, { message: "Друзья не найдены" });
-    }
+    const incoming = friendships.filter((f) => f.receiver_id === user_id);
+    const outgoing = friendships.filter((f) => f.sender_id === user_id);
 
-    const friends = friendship.map((f) => {
-      return f.sender_id === user_id ? f.receiver : f.sender;
-    });
-
-    return friends;
+    return { incoming, outgoing };
   } catch (e) {
     checkError(e, {});
   }
