@@ -30,7 +30,11 @@ function MainPage() {
 
       {/* 3. ЗОНА ЧАТА */}
       <div className="flex flex-1 flex-col bg-[#1e1f24] relative">
-        {activeChat === "friends" ? <FriendsScreen /> : <ChatScreen />}
+        {activeChat === "friends" ? (
+          <FriendsScreen setActiveChat={setActiveChat} />
+        ) : (
+          <ChatScreen activeChat={activeChat} />
+        )}
       </div>
     </div>
   );

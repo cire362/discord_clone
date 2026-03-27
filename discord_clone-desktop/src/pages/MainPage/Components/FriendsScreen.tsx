@@ -10,7 +10,12 @@ import FriendIcon from "../../../components/Icons/friendIcon";
 import FriendList from "./FriendsScreen/FriendList";
 import PendingFriends from "./FriendsScreen/PendingFriends";
 import AddFriend from "./FriendsScreen/AddFriend";
-function FriendsScreen() {
+
+interface FriendsScreenProps {
+  setActiveChat: (chatId: string) => void;
+}
+
+function FriendsScreen({ setActiveChat }: FriendsScreenProps) {
   const queryClient = useQueryClient();
   const [friendTab, setFriendTab] = useState<"all" | "pending" | "add">("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -115,6 +120,7 @@ function FriendsScreen() {
           <FriendList
             allFriends={allFriends}
             isFriendsLoading={isFriendsLoading}
+            setActiveChat={setActiveChat}
           />
         )}
 

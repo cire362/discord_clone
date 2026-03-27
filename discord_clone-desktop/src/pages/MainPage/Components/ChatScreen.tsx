@@ -1,18 +1,16 @@
 import { useState } from "react";
 import PlusIcon from "../../../components/Icons/plusIcon";
 
-function ChatScreen() {
+interface ChatScreenProps {
+  activeChat: string;
+}
+
+function ChatScreen({ activeChat }: ChatScreenProps) {
   const [messageText, setMessageText] = useState("");
 
   const [localMessages, setLocalMessages] = useState<
     { id: number; text: string; time: string }[]
-  >([
-    {
-      id: 1,
-      text: "Настройки стилей загружены успешно. Формы работают, токен сохраняется! 🚀",
-      time: "19:14",
-    },
-  ]);
+  >([]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +32,14 @@ function ChatScreen() {
   return (
     <>
       <div className="h-12 flex items-center px-4 border-b border-gray-800 bg-[#1e1f24]/80 backdrop-blur-md absolute top-0 w-full z-10">
-        <span className="text-xl text-gray-500 mr-2">#</span>
-        <h2 className="font-bold text-gray-100">общий</h2>
+        <span className="text-xl text-gray-500 mr-2">@</span>
+        <h2 className="font-bold text-gray-100">{activeChat}</h2>
       </div>
 
       {/* Область сообщений */}
       <div className="flex-1 overflow-y-auto p-4 pt-16 pb-24">
         <div className="text-center text-gray-500 my-4 text-sm">
-          Добро пожаловать в начало канала #общий.
+          Это начало вашей истории сообщений с {activeChat}.
         </div>
 
         {/* Пример сообщений */}
@@ -86,7 +84,7 @@ function ChatScreen() {
             type="text"
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Написать сообщение..."
+            placeholder={`Написать @${activeChat}`}
             className="bg-transparent text-gray-100 w-full focus:outline-none placeholder-gray-500 font-medium tracking-wide"
           />
         </form>
